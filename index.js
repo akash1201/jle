@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === 'development') {
 app.use(cors())
 app.use(express.json())
 
-await mongoose.connect(process.env.DB_HOST).then(()=>{
+mongoose.connect(process.env.DB_HOST).then(()=>{
           console.log('DB Connected')
 })
 
