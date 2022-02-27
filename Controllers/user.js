@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid'
 import Rpin from '../Models/Rpin.js'
 import {ObjectId} from 'mongodb'
 import Bill from '../Models/Bill.js'
+import base64 from 'base-64';
+import fetch from 'node-fetch'
 
 
 const registerUser = asyncHandler(async(req, res)=>{
@@ -20,7 +22,41 @@ const registerUser = asyncHandler(async(req, res)=>{
                 ])
 
                 let slno = max[0].maxSlNo?(max[0].maxSlNo+1):(1)
-                console.log(req.body)
+                 //Razor Pay api calls
+                 let key = `${process.env.RAZORPAY_KEY}:${process.env.RAZORPAY_SECRET}`;
+                 let encodedKey = base64.encode(key);
+                 let config = {
+                        'Content-Type': 'application/json',
+                         'Authorization' : `Basic ${encodedKey}`
+                 }
+                 let contactObj = {
+                       name : req.body.name,
+                       contact : req.body.phone,
+                       type : "customer"
+                 }
+                 let response = await fetch(`https://api.razorpay.com/v1/contacts`,{
+                    method: 'post',
+                    body: JSON.stringify(contactObj),
+                    headers: config
+                });
+                let data = await response.json();
+                let contactId = data.id;
+                let bankDetails = {
+                    contact_id : contactId,
+                    account_type : "bank_account",
+                    bank_account : {
+                        name : req.body.name,
+                        ifsc : req.body.ifsc,
+                        account_number : req.body.account
+                    }
+                }
+                let response1 = await fetch(`https://api.razorpay.com/v1/fund_accounts`,{
+                    method: 'post',
+                    body: JSON.stringify(bankDetails),
+                    headers: config
+                });
+                let data1 = await response1.json();
+
                 let obj = {
                           parentId : req.body.parentId,
                           name : req.body.name,
@@ -29,8 +65,9 @@ const registerUser = asyncHandler(async(req, res)=>{
                           userId : 'JLE00'+slno,
                           rPin: req.body.rpin,
                           phone : req.body.phone,
-                          password : req.body.password
-
+                          password : req.body.password,
+                          contactId : contactId,
+                          fundId : data1.id
                 }
 
                 try{

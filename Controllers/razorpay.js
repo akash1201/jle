@@ -4,7 +4,7 @@ import razorpay from 'razorpay';
 const createOrder = asyncHandler (async (req, res)=>{
 
           var instance = new razorpay({ key_id: process.env.RAZORPAY_KEY, key_secret: process.env.RAZORPAY_SECRET });
-
+           
           let order = await instance.orders.create({
                     amount: 50000,
                     currency: "INR",
